@@ -4,10 +4,10 @@ import sys
 args = sys.argv[1:]
 
 filepath = os.path.join(os.path.sep, '/Volumes', 'Padlock', 'TOLSURF')
-mainfile = 'ikaria_pheno_data_ALL_withAncestry.txt'
+mainfile = 'ancestry_wheeze.txt'
 headerfile = 'headers.txt'
 multifile = 'tolsurf_twins_iid2.txt'
-outfile = 'filtered_data.txt'
+outfile = 'filtered_wheeze.txt'
 
 # create header dictionary
 headers = []
@@ -16,6 +16,7 @@ with open(os.path.join(filepath, headerfile), 'r') as f:
     for i, line in enumerate(f.readlines()):
         hdr[line.strip()] = i
         headers.append(line.strip())
+headers.append('wheeze')
 
 subjects_all = dict()
 with open(os.path.join(filepath, mainfile), 'r') as f:

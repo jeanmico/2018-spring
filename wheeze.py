@@ -16,6 +16,12 @@ def id_match(wheeze, ancestry):
         else:
             print(patient)
 
+def unknown(ancestry):
+    for key, val in ancestry.items():
+        if len(val) < 43:
+            print('ok')
+            val.append(-1)
+
 filepath = os.path.join(os.path.sep, 'Volumes', 'Padlock', 'TOLSURF')
 wheezefile = 'wheeze.csv'
 ancestryfile = 'ikaria_pheno_data_ALL_withAncestry.txt'
@@ -34,6 +40,8 @@ with open(os.path.join(filepath, wheezefile), 'r') as f:
     for line in f:
         lineval = line.strip().split(',')
         patient = lineval[0].strip()
+        if not is_number(lineval[1]):
+            lineval[1]= -1
         if is_number(patient):
             wheeze_id.add(patient)
             wheeze.append(lineval)
@@ -42,6 +50,7 @@ if len(wheeze_id) != len(wheeze):
     raise ValueError('duplicate id found in wheeze file')
 
 id_match(wheeze, ancestry)
+unknown(ancestry)
 
 # write output
 with open(os.path.join(filepath, outfile), 'w+') as out:
