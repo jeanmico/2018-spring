@@ -37,3 +37,32 @@ png(filename='afr_2hist.png')
 hist(wheeze_no$afr, col=rgb(1,0,0,0.5), main="African ancestry", xlab = 'afr')
 hist(wheeze_yes$afr, col=rgb(0,0,1,0.5), add=T)
 dev.off()
+
+wheeze_known = subset(subjects, wheeze!=-1)
+
+train_size = floor(0.75 * nrow(wheeze_known))
+
+train_ind = sample(seq_len(nrow(wheeze_known)), size = train_size)
+train = wheeze_known[train_ind, ]
+test = wheeze_known[-train_ind, ]
+
+mylogit = glm(wheeze ~ afr + nam + AE1GESAGE + AIDGEND + APDMGES + AIDWTG, data=train, family="binomial")
+summary(mylogit)
+
+library(pROC)
+predict(mylogit, newdata=test, type='response')
+
+
+library('ROCR')
+prob = predict(mylogit, newdata=test, type="response")
+pred = prediction(prob, test$bpd36.die)
+perf = performance(pred, measure = 'tpr', x.measure = 'fpr')
+
+png(filename="roc_afrnam.png")
+plot(perf, main='AUROC = .5')
+dev.off()
+
+auc = performance(pred, measure = 'auc')
+auc = auc@y.values[[1]]
+auc
+
