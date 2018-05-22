@@ -13,7 +13,7 @@ def process():
     mainfile = 'ancestry_wheeze.txt'
     headerfile = 'headers.txt'
     multifile = 'tolsurf_twins_iid2.txt'
-    outfile = 'filtered_wheeze.txt'
+    outfile = 'filtered_wheeze_whitehisp.txt'
 
     # create header dictionary
     headers = []
@@ -26,16 +26,22 @@ def process():
 
     subjects = dict()
     ids_all = []
+    labid = dict()
     with open(os.path.join(filepath, mainfile), 'r') as f:
         for line in f:
             linevals = line.strip().split('\t')
-            subjects[linevals[0]] = linevals
-            ids_all.append(linevals[0])
+            tmpid = linevals[0]
+            subjects[tmpid] = linevals
+            ids_all.append(tmpid)
+            labid[linevals[hdr['lab_id']]] = tmpid
 
     # verify that there are no duplicate keys
     if len(subjects) != len(ids_all):
         raise ValueError('there are duplicate patient ids in the file')
     print('Total subjects: ' + str(len(subjects)))
+
+    # filter out multiples
+    multiples(filepath, hdr, subjects, labid)
 
     # filter by race
     remove(hdr, subjects, 'APDRACE', race)
@@ -43,11 +49,8 @@ def process():
     # filter by ethnicity
     remove(hdr, subjects, 'APDETH', ethnicity)
 
-    # filter out multiples
-    multiples(filepath, hdr, subjects)
-
     # write output file
-    output(filepath, subjects, headers)
+    output(filepath, outfile, subjects, headers)
 
 
 def remove(hdr, data, column, value):
@@ -55,7 +58,7 @@ def remove(hdr, data, column, value):
     # value is a collection 
     remove_ids = set()
     for key, val in data.items():
-        if val[hdr[column]]==value:
+        if val[hdr[column]]!=value:
             remove_ids.add(key)
 
     for identity in remove_ids:
@@ -64,27 +67,27 @@ def remove(hdr, data, column, value):
     #TODO: print result
     #TODO: check length
 
-def multiples(filepath, hdr, subjects):
+def multiples(filepath, hdr, subjects, labid):
     # remove multiples by id
     multifile = 'tolsurf_twins_iid2.txt'
     multiples = set()
     with open(os.path.join(filepath, multifile), 'r') as f:
         for line in f:
-        	linevals = line.strip().split('\t')
-        	multiples.add(linevals[0])
+            linevals = line.strip().split('\t')
+            multiples.add(linevals[0])
 
     remove_ids = set()
     for key, val in subjects.items():
         if val[hdr['lab_id']] in multiples:
-        	remove_ids.add(val[hdr['lab_id']])
+            remove_ids.add(val[hdr['lab_id']])
 
     for multiple_id in remove_ids:
-        del subjects[labid_id[multiple_id]]
+        del subjects[labid[multiple_id]]
     # all the multiples were successfully removed
     print('Remove multiples: ' + str(len(subjects)))
 
 
-def output(filepath, subjects, headers):
+def output(filepath, outfile, subjects, headers):
     # create output file that can be read into R
     with open(os.path.join(filepath, outfile), 'w+') as out:
         out.write('\t'.join(str(x) for x in headers))
