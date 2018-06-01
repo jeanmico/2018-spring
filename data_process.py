@@ -1,3 +1,5 @@
+# HOW TO CALL THIS CODE
+# python data_process.py Race Ethnicity Remove_multiples Outfile_name
 import os
 import sys
 
@@ -8,12 +10,12 @@ def process():
     remove_mult = False
     if args[2][0]=="T":
         remove_mult = True
+    outfile = args[3]
 
     filepath = os.path.join(os.path.sep, '/Volumes', 'Padlock', 'TOLSURF')
     mainfile = 'ancestry_wheeze.txt'
     headerfile = 'headers.txt'
     multifile = 'tolsurf_twins_iid2.txt'
-    outfile = 'filtered_wheeze_whitehisp.txt'
 
     # create header dictionary
     headers = []
@@ -41,13 +43,16 @@ def process():
     print('Total subjects: ' + str(len(subjects)))
 
     # filter out multiples
-    multiples(filepath, hdr, subjects, labid)
+    if remove_mult:
+        multiples(filepath, hdr, subjects, labid)
 
     # filter by race
-    remove(hdr, subjects, 'APDRACE', race)
+    if race.lower() != 'all':
+        subjects = remove(hdr, subjects, 'APDRACE', race)
 
     # filter by ethnicity
-    remove(hdr, subjects, 'APDETH', ethnicity)
+    if ethnicity.lower() != 'all':
+        subjects = remove(hdr, subjects, 'APDETH', ethnicity)
 
     # write output file
     output(filepath, outfile, subjects, headers)
@@ -63,6 +68,8 @@ def remove(hdr, data, column, value):
 
     for identity in remove_ids:
         del data[identity]
+    print(value + ': ' + str(len(data)))
+    return data
 
     #TODO: print result
     #TODO: check length
