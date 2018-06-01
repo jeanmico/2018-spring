@@ -1,9 +1,9 @@
 setwd("/Volumes/Padlock/TOLSURF/")
 
 # THINGS TO UPDATE BEFORE RUNNING
-subjects = read.table('filtered_wheeze.txt',sep='\t', header=TRUE)  # file to be read in, update
-setwd("/Volumes/Padlock/TOLSURF/blacknothisp")  # directory for saving plots, update
-prefix = 'b_nh_' # prefix for labelling plots, update
+subjects = read.table('filtered_wheeze_all.txt',sep='\t', header=TRUE)  # file to be read in, update
+setwd("/Volumes/Padlock/TOLSURF/all")  # directory for saving plots, update
+prefix = 'all_' # prefix for labelling plots, update
 
 # subset the subjects by wheeze status
 wheeze_yes = subset(subjects, wheeze==1)
@@ -53,10 +53,10 @@ dev.off()
 
 
 # multi-layer histogram, not that helpful
-png(filename='afr_2hist.png')
-hist(wheeze_no$afr, col=rgb(1,0,0,0.5), main="African ancestry", xlab = 'afr')
-hist(wheeze_yes$afr, col=rgb(0,0,1,0.5), add=T)
-dev.off()
+#png(filename='afr_2hist.png')
+#hist(wheeze_no$afr, col=rgb(1,0,0,0.5), main="African ancestry", xlab = 'afr')
+#hist(wheeze_yes$afr, col=rgb(0,0,1,0.5), add=T)
+#dev.off()
 
 # wheeze status known, used for logistic regression
 wheeze_known = subset(subjects, wheeze!=-1)
@@ -69,7 +69,7 @@ test = wheeze_known[-train_ind, ]
 
 
 # logistic regression model
-mylogit = glm(wheeze ~ afr + nam + AE1GESAGE + AIDGEND + APDMGES + AIDWTG, data=train, family="binomial")
+mylogit = glm(wheeze ~ afr + nam + AE1GESAGE + AIDGEND + APDMGES + AIDWTG + APDRACE + APDETH, data=train, family="binomial")
 summary(mylogit)
 
 # area under the curve
