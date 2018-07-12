@@ -7,6 +7,7 @@ from math import floor
 filepath = os.path.join(os.path.sep, "Volumes", "Padlock", "TOLSURF")
 filename = "annual_aqi_by_county_2016.csv"
 statefile = 'state_dict.txt'
+sitefile = 'sites.csv'
 mapfile = 'USA_Counties_with_names.svg'
 outfile = "epa.svg"
 missingfile = 'county_not_found.txt'
@@ -26,10 +27,19 @@ reader = csv.reader(open(os.path.join(filepath, filename)), delimiter = ",")
 for row in reader:
     try:
         county = state_abv[row[0].upper()] + '_' +  row[1].strip().replace(' ', '_').replace("'", '').replace("Saint_", 'St._')
-        quality = int(row[12])
+        quality = int(row[18])
         aqi[county] = quality
     except:
         pass
+
+sites = set()
+reader = csv.reader(open(os.path.join(filepath, sitefile)), delimiter = ",")
+for row in reader:
+    if row[2] != '':
+        sites.add(row[2] + '_' + row[3].replace(' ', '_'))
+
+print(sites)
+print(len(sites))
 
 map_svg = open(os.path.join(filepath, mapfile), 'r').read()
 
@@ -42,6 +52,7 @@ paths = soup.findAll('path')
 colors = ['#fef0d9','#fdd49e','#fdbb84','#fc8d59','#e34a33','#b30000']
 #replace entire style node with the following:
 path_style = "font-size:12px;fill-opacity:1;fill-rule:nonzero;stroke:none;fill:"
+path_style_b = "font-size:12px;fill-opacity:1;fill-rule:nonzero;stroke:black;fill:"
 
 missing_counties = set(aqi.keys())
 # we want to know what entries are in the aqi list that were not colored on the map
@@ -62,7 +73,11 @@ for p in paths:
             color_class = floor((score - 1)/20)
 
         color = colors[color_class]
-        p['style'] = path_style + color
+        if p['id'] in sites:
+            print(p['id'])
+            p['style'] = path_style_b + color
+        else:
+            p['style'] = path_style + color
 #create outfile
 with open(os.path.join(filepath, outfile), 'w+') as out:
     out.write(soup.prettify())
