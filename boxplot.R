@@ -1,9 +1,27 @@
-setwd("/Volumes/Padlock/TOLSURF/")
+args = commandArgs(trailingOnly=TRUE)
 
-# THINGS TO UPDATE BEFORE RUNNING
-subjects = read.table('filtered_wheeze_all.txt',sep='\t', header=TRUE)  # file to be read in, update
-setwd("/Volumes/Padlock/TOLSURF/all")  # directory for saving plots, update
-prefix = 'all_' # prefix for labelling plots, update
+# INPUT ARGUMENTS
+
+if (length(args) !=3) {
+	stop("three arguments required")
+}
+
+infile = args[1] # name of file containing data to be analyzed
+outpref = args[2] # defines prefix of the files to be written
+airdata = FALSE # captures whether or not the EPA air quality data should be considered
+if (substr(airdata,1,1) == 'T') {
+	airdata = TRUE
+}
+
+# READ IN THE DATA
+
+setwd("/Volumes/Padlock/TOLSURF/")
+subjects = read.table(infile ,sep='\t', header=TRUE)  # file to be read in, update
+setwd(paste("/Volumes/Padlock/TOLSURF/", outpref, sep=''))  # directory for saving plots, update
+prefix = paste(outpref, '_', sep='') # prefix for labelling plots, update
+
+anc = c('afr', 'eur', 'nam')
+ancestry = c("African", "European", "Native American")
 
 # subset the subjects by wheeze status
 wheeze_yes = subset(subjects, wheeze==1)
@@ -12,21 +30,13 @@ wheeze_unknown = subset(subjects, wheeze==-1)
 
 # BOXPLOTS
 #2-sample t-test; see if we have significance
-a = t.test(wheeze_yes$afr, wheeze_no$afr, var.equal=TRUE, paired=FALSE)
-png(filename= paste(prefix, "afr_wheeze.png", sep=''))
-boxplot(afr~wheeze, data=subjects, xlab="wheeze", ylab="afr", main=paste("African ancestry", '(pval = ', round(a$p.value,2), ')'))
-dev.off()
-
-#2-sample t-test; see if we have significance
-a = t.test(wheeze_yes$eur, wheeze_no$eur, var.equal=TRUE, paired=FALSE)
-png(filename=paste(prefix, "eur_wheeze.png", sep=''))
-boxplot(eur~wheeze, data=subjects, xlab="wheeze", ylab="eur", main=paste("European ancestry", '(pval = ', round(a$p.value,2), ')'))
-dev.off()
-
-#2-sample t-test; see if we have significance
-a = t.test(wheeze_yes$nam, wheeze_no$nam, var.equal=TRUE, paired=FALSE)
-png(filename=paste(prefix, "nam_wheeze.png", sep=''))
-boxplot(nam~wheeze, data=subjects, xlab="wheeze", ylab="nam", main=paste("Native American ancestry", '(pval = ', round(a$p.value,2), ')'))
+png(filename=paste(prefix, "_wheeze.png", sep=''), width=800,height=350)
+par(mfrow=c(1,3))
+for (i in 1:length(ancestry)) {
+	a = t.test(wheeze_yes[anc[i]], wheeze_no[anc[i]], var.equal=TRUE, paired=FALSE)
+	boxplot(subjects[,anc[i]]~subjects$wheeze, data=subjects, xlab="wheeze", ylab=anc[i], main=ancestry[i], sub=paste('pval =', round(a$p.value,2)))
+	#dev.off()
+}
 dev.off()
 
 # WHEEZE STATUS
@@ -35,28 +45,12 @@ print(wheeze_count)
 
 # ANCESTRY HISTOGRAMS
 
-png(filename=paste(prefix, 'afr_hist.png', sep=''))
-hist(subjects$afr, xlab='afr', main="African ancestry")
+png(filename=paste(prefix, '_ancestry.png', sep=''), width=800, height=350)
+par(mfrow=c(1,3))
+for (i in 1:length(ancestry)) {
+	hist(subjects[,anc[i]], xlab=anc[i], main=ancestry[i])
+}
 dev.off()
-
-
-png(filename=paste(prefix, 'eur_hist.png', sep=''))
-hist(subjects$eur, xlab='eur', main="European ancestry")
-dev.off()
-
-
-png(filename=paste(prefix, 'nam_hist.png', sep=''))
-hist(subjects$nam, xlab='nam', main="Native American ancestry")
-dev.off()
-
-
-
-
-# multi-layer histogram, not that helpful
-#png(filename='afr_2hist.png')
-#hist(wheeze_no$afr, col=rgb(1,0,0,0.5), main="African ancestry", xlab = 'afr')
-#hist(wheeze_yes$afr, col=rgb(0,0,1,0.5), add=T)
-#dev.off()
 
 # wheeze status known, used for logistic regression
 wheeze_known = subset(subjects, wheeze!=-1)
