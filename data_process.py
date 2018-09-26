@@ -5,17 +5,21 @@ import sys
 
 def process():
     args = sys.argv[1:]
-    race = args[0]
-    ethnicity = args[1]
+    race = args[0].lower()
+    ethnicity = args[1].lower()
     remove_mult = False
     if args[2][0]=="T":
         remove_mult = True
-    outfile = args[3]
+    outprefix = args[3]
 
     filepath = os.path.join(os.path.sep, '/Volumes', 'Padlock', 'TOLSURF')
+    outpath = os.path.join(filepath, outprefix)
+    outfile = outprefix + '_subjects.txt'
+    outrecord = outprefix + '_readme.txt'
     mainfile = 'ancestry_wheeze.txt'
     headerfile = 'headers.txt'
     multifile = 'tolsurf_twins_iid2.txt'
+    filter_list = []  # stores numbers removed from population
 
     # create header dictionary
     headers = []
@@ -40,22 +44,29 @@ def process():
     # verify that there are no duplicate keys
     if len(subjects) != len(ids_all):
         raise ValueError('there are duplicate patient ids in the file')
-    print('Total subjects: ' + str(len(subjects)))
+    print('total subjects: ' + str(len(subjects)))
+    total_subj = ['total subjects', str(len(subjects))]
+    filter_list.append(total_subj)
+
 
     # filter out multiples
     if remove_mult:
-        multiples(filepath, hdr, subjects, labid)
+        subjects, new_record = multiples(filepath, hdr, subjects, labid)
+    filter_list.append(new_record)
 
     # filter by race
     if race.lower() != 'all':
-        subjects = remove(hdr, subjects, 'APDRACE', race)
+        subjects, new_record = remove(hdr, subjects, 'APDRACE', race)
+    filter_list.append(new_record)
 
     # filter by ethnicity
     if ethnicity.lower() != 'all':
-        subjects = remove(hdr, subjects, 'APDETH', ethnicity)
+        subjects, new_record = remove(hdr, subjects, 'APDETH', ethnicity)
+    filter_list.append(new_record)
 
     # write output file
-    output(filepath, outfile, subjects, headers)
+    output(outpath, outfile, subjects, headers)
+    record_file(outpath, outrecord, filter_list)
 
 
 def remove(hdr, data, column, value):
@@ -63,18 +74,19 @@ def remove(hdr, data, column, value):
     # value is a collection 
     remove_ids = set()
     for key, val in data.items():
-        if val[hdr[column]]!=value:
+        if val[hdr[column]].lower()!=value:
             remove_ids.add(key)
 
     for identity in remove_ids:
         del data[identity]
     print(value + ': ' + str(len(data)))
-    return data
+    record = [value, str(len(data))]
+    return data, record
 
     #TODO: print result
     #TODO: check length
 
-def multiples(filepath, hdr, subjects, labid):
+def multiples(filepath, hdr, data, labid):
     # remove multiples by id
     multifile = 'tolsurf_twins_iid2.txt'
     multiples = set()
@@ -84,14 +96,16 @@ def multiples(filepath, hdr, subjects, labid):
             multiples.add(linevals[0])
 
     remove_ids = set()
-    for key, val in subjects.items():
+    for key, val in data.items():
         if val[hdr['lab_id']] in multiples:
             remove_ids.add(val[hdr['lab_id']])
 
     for multiple_id in remove_ids:
-        del subjects[labid[multiple_id]]
+        del data[labid[multiple_id]]
     # all the multiples were successfully removed
-    print('Remove multiples: ' + str(len(subjects)))
+    print('remove multiples: ' + str(len(data)))
+    record = ['remove multiples', str(len(data))]
+    return data, record
 
 
 def output(filepath, outfile, subjects, headers):
@@ -100,6 +114,11 @@ def output(filepath, outfile, subjects, headers):
         out.write('\t'.join(str(x) for x in headers))
         out.write('\n')
         out.write('\n'.join('\t'.join(str(x) for x in val) for val in subjects.values()))
+
+def record_file(filepath, filename, data):
+    with open(os.path.join(filepath, filename), 'w+') as out:
+        out.write('\n'.join(': '.join(str(x) for x in item) for item in data))
+
 
 if __name__ == '__main__':
     process()
